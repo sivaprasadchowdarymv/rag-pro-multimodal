@@ -1,0 +1,11 @@
+# RAG∞ Pro - OPTIONAL multimodal extras: ColPali visual page search.
+# Not needed for Streamlit Community Cloud (too little RAM); used by Docker and the Hugging Face Space.
+#
+# Install torch + torchvision FIRST, from the index that matches your machine:
+#   CPU : pip install "torch>=2.3,<2.14" torchvision --index-url https://download.pytorch.org/whl/cpu
+#   GPU : pip install "torch>=2.3,<2.14" torchvision --index-url https://download.pytorch.org/whl/cu126
+# then:  pip install -r requirements-visual.txt
+#
+# colpali-engine 0.3.x requires torch < 2.14 and transformers >= 5.3 (installed with it).
+colpali-engine>=0.3.10,<0.4
+pillow>=10.0

@@ -1,0 +1,49 @@
+# RAG∞ Pro with Docker Compose
+#
+#   docker compose up -d --build                     # app only (Groq / Ollama Cloud answer)
+#   docker compose --profile vision up -d --build    # + local Ollama with Gemma 3 (reads page images, free)
+#
+# For the vision profile put these in .env:
+#   ENABLE_OLLAMA_LOCAL=true
+#   OLLAMA_LOCAL_HOST=http://ollama:11434
+#   LLM_PROVIDERS=groq,ollama_local      (or ollama_local alone: no key at all)
+services:
+  app:
+    build: .
+    env_file: .env          # GROQ_API_KEY, HF_TOKEN, ... (never commit .env)
+    ports:
+      - "127.0.0.1:8501:8501"   # local only; put a reverse proxy in front for public HTTPS
+    volumes:
+      - app_data:/app/data
+    restart: unless-stopped
+    logging:
+      options: { max-size: "10m", max-file: "3" }
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["vision"]
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # one-shot: pulls the vision model, then exits
+  ollama-pull:
+    image: ollama/ollama:latest
+    profiles: ["vision"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_PULL: ${OLLAMA_PULL:-gemma3:4b}
+    entrypoint: ["/bin/sh", "-c", "for m in $$OLLAMA_PULL; do echo pulling $$m; ollama pull $$m || exit 1; done"]
+    restart: "no"
+
+volumes:
+  app_data:
+  ollama:
